@@ -1,5 +1,4 @@
 #include <stdint.h>
-#include <stdio.h>
 
 #define REG32(addr) (*(volatile uint32_t *)addr)
 
@@ -14,17 +13,9 @@
 #define EXTI_PR REG32(0x40013C14)
 #define NVIC_ISER0 REG32(0xE000E100)
 
-void delay(unsigned int count)
-{
-    while (count--)
-    {
-        int num = 1000;
-        while (num--) {}
-    }
-}
-
 void BlinkLED(int enable_blink)
 {
+    static unsigned int counter = 0;
     static int dim = 0;
     if (!(GPIOA_MODER & 0x1000) || (GPIOA_MODER & 0x2000))
     {
@@ -33,20 +24,28 @@ void BlinkLED(int enable_blink)
     }
     if (enable_blink == 0)
     {
+        GPIOA_BSRR = (1UL << 22);
+        dim = 0;
+        counter = 0;
         return;
     }
-    
-    if (dim == 1)
+
+    switch (dim)
     {
-        GPIOA_BSRR = (1UL << 6);
-        delay(2000000);
-        dim = 0;
+        case 0:
+            GPIOA_BSRR = (1UL << 22);
+            break;
+        case 1:
+            GPIOA_BSRR = (1UL << 6);
+            break;
+        default:
+            break;
     }
-    else
+
+    if (counter++ >= 2000000)
     {
-        GPIOA_BSRR = (1UL << 22);
-        delay(2000000);
-        dim = 1;
+        dim ^= 1;
+        counter = 0;
     }
 }
 
